@@ -1,0 +1,10 @@
+{
+    "name": "supabase-backend-service",
+    "theme": "material",
+    "output": "documentation",
+    "tsconfig": "tsconfig.json",
+    "hideGenerator": true,
+    "watch": true,
+    "serve": true,
+    "port": 8080
+}

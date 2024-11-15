@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas  = ["public"]
+}
+
+// Public Schema Models
+model Company {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?  @db.Text
+  website     String?
+  logoUrl     String?  @map("logo_url")
+  address     String?  @db.Text
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?  @map("postal_code")
+  phone       String?
+  email       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  // Relations
+  userId      String   @unique @map("user_id") @db.Uuid
+
+  @@index([userId])
+  @@index([createdBy])
+  @@schema("public")
+}
+
+model Plan {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  description   String?    @db.Text
+  price         Decimal    @db.Decimal(10, 2)
+  currency      String     @default("USD") @db.VarChar(3)
+  billingPeriod String     @default("monthly") @map("billing_period") @db.VarChar(10)
+  features      Json?
+  trialDays     Int?       @map("trial_days")
+  maxUsers      Int?       @map("max_users")
+  sortOrder     Int?       @map("sort_order")
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  // Relations
+  userPlans     UserPlan[]
+
+  @@schema("public")
+}
+
+model Profession {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  label           String
+  hintText        String?          @map("hint_text")
+  isActive        Boolean          @default(true) @map("is_active")
+  sortOrder       Int?             @map("sort_order")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  // Relations
+  userProfessions UserProfession[]
+
+  @@schema("public")
+}
+
+model UserProfession {
+  id              String     @id @default(uuid())
+  userId      String   @unique @map("user_id") @db.Uuid
+  professionId    String     @map("profession_id")
+  otherProfession String?    @map("other_profession")
+  isPrimary       Boolean    @default(false) @map("is_primary")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  // Relations
+
+  profession      Profession @relation(fields: [professionId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([professionId])
+  @@index([isPrimary])
+  @@schema("public")
+}
+
+model UserPlan {
+  id           String    @id @default(uuid())
+  userId      String   @unique @map("user_id") @db.Uuid
+  planId       String    @map("plan_id")
+  status       String
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  trialEndDate DateTime? @map("trial_end_date")
+  cancelledAt  DateTime? @map("cancelled_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  // Relations
+  plan         Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, status])
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@schema("public")
+}
+
+model Interest {
+  id              String         @id @default(uuid())
+  name            String         @unique
+  label           String
+  description     String?        @db.Text
+  isActive        Boolean        @default(true) @map("is_active")
+  sortOrder       Int?           @map("sort_order")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  // Relations
+  userInterests   UserInterest[]
+
+  @@schema("public")
+}
+
+model UserInterest {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id") @db.Uuid
+  interestId  String    @map("interest_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  // Relations
+  interest    Interest  @relation(fields: [interestId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, interestId])
+  @@index([userId])
+  @@index([interestId])
+  @@schema("public")
+}
+
+model Address {
+  id          String    @id @default(uuid())
+  userId      String   @unique @map("user_id") @db.Uuid
+  street      String    @db.Text
+  city        String
+  state       String?
+  country     String
+  postalCode  String    @map("postal_code")
+  isDefault   Boolean   @default(false) @map("is_default")
+  type        String    @default("home") // home, work, other
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@schema("public")
+}
